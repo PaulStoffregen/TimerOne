@@ -95,6 +95,31 @@
   #define TIMER1_ICP_PIN 14
   #define TIMER1_CLK_PIN 1
 
+// Wildfire - Wicked Devices
+/*  TODO: need Wildfire's pins_arduino.h to define a symbol
+    so we can tell the difference between Wildfile & Mighty-1284
+#elif defined(__AVR_ATmega1284P__)
+  #define TIMER1_A_PIN   5   // PD5
+  #define TIMER1_B_PIN   4   // PD4
+  #define TIMER1_ICP_PIN 6   // PD6
+  #define TIMER1_CLK_PIN 15  // PB1
+  #define TIMER3_A_PIN   12  // PB6
+  #define TIMER3_B_PIN   13  // PB7
+  #define TIMER3_ICP_PIN 11  // PB5
+  #define TIMER3_CLK_PIN 0   // PD0
+*/
+
+// Mighty-1284 - Maniacbug
+#elif defined(__AVR_ATmega1284P__)
+  #define TIMER1_A_PIN   12  // PD5
+  #define TIMER1_B_PIN   13  // PD4
+  #define TIMER1_ICP_PIN 14  // PD6
+  #define TIMER1_CLK_PIN 1   // PB1
+  #define TIMER3_A_PIN   6   // PB6
+  #define TIMER3_B_PIN   7   // PB7
+  #define TIMER3_ICP_PIN 5   // PB5
+  #define TIMER3_CLK_PIN 8   // PD0
+
 #endif
 
 #endif
