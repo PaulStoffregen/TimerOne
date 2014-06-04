@@ -4,6 +4,8 @@
  *  Modified March 2009 by Jérôme Despatis and Jesse Tane for ATmega328 support
  *  Modified June 2009 by Michael Polli and Jesse Tane to fix a bug in setPeriod() which caused the timer to stop
  *  Modified April 2012 by Paul Stoffregen - portable to other AVR chips, use inline functions
+ *  Modified again, June 2014 by Paul Stoffregen - support Teensy 3.x & even more AVR chips
+ *  
  *
  *  This is free software. You can redistribute it and/or modify it under
  *  the terms of Creative Commons Attribution 3.0 United States License. 
