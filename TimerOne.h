@@ -34,6 +34,9 @@
 
 class TimerOne
 {
+
+
+#if defined(__AVR__)
   public:
     //****************************
     //  Configuration
@@ -78,15 +81,13 @@ class TimerOne
     void start() __attribute__((always_inline)) {
 	TCCR1B = 0;
 	TCNT1 = 0;		// TODO: does this cause an undesired interrupt?
-	TCCR1B = _BV(WGM13) | clockSelectBits;
+	resume();
     }
     void stop() __attribute__((always_inline)) {
 	TCCR1B = _BV(WGM13);
     }
     void restart() __attribute__((always_inline)) {
-	TCCR1B = 0;
-	TCNT1 = 0;
-	TCCR1B = _BV(WGM13) | clockSelectBits;
+	start();
     }
     void resume() __attribute__((always_inline)) {
 	TCCR1B = _BV(WGM13) | clockSelectBits;
@@ -146,12 +147,145 @@ class TimerOne
     void detachInterrupt() __attribute__((always_inline)) {
 	TIMSK1 = 0;
     }
-    void (*isrCallback)();
+    static void (*isrCallback)();
 
-  protected:
+  private:
     // properties
-    static unsigned int pwmPeriod;
+    static unsigned short pwmPeriod;
     static unsigned char clockSelectBits;
+
+
+
+
+
+
+#elif defined(__arm__) && defined(CORE_TEENSY)
+
+  public:
+    //****************************
+    //  Configuration
+    //****************************
+    void initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
+	setPeriod(microseconds);
+    }
+    void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
+	const unsigned long cycles = (F_BUS / 2000000) * microseconds;
+	if (cycles < TIMER1_RESOLUTION) {
+		clockSelectBits = 0;
+		pwmPeriod = cycles;
+	} else
+	if (cycles < TIMER1_RESOLUTION * 2) {
+		clockSelectBits = 1;
+		pwmPeriod = cycles >> 1;
+	} else
+	if (cycles < TIMER1_RESOLUTION * 4) {
+		clockSelectBits = 2;
+		pwmPeriod = cycles >> 2;
+	} else
+	if (cycles < TIMER1_RESOLUTION * 8) {
+		clockSelectBits = 3;
+		pwmPeriod = cycles >> 3;
+	} else
+	if (cycles < TIMER1_RESOLUTION * 16) {
+		clockSelectBits = 4;
+		pwmPeriod = cycles >> 4;
+	} else
+	if (cycles < TIMER1_RESOLUTION * 32) {
+		clockSelectBits = 5;
+		pwmPeriod = cycles >> 5;
+	} else
+	if (cycles < TIMER1_RESOLUTION * 64) {
+		clockSelectBits = 6;
+		pwmPeriod = cycles >> 6;
+	} else
+	if (cycles < TIMER1_RESOLUTION * 128) {
+		clockSelectBits = 7;
+		pwmPeriod = cycles >> 7;
+	} else {
+		clockSelectBits = 7;
+		pwmPeriod = TIMER1_RESOLUTION - 1;
+	}
+	uint32_t sc = FTM1_SC;
+	FTM1_SC = 0;
+	FTM1_MOD = pwmPeriod;
+	FTM1_SC = FTM_SC_CLKS(1) | FTM_SC_CPWMS | clockSelectBits | (sc & FTM_SC_TOIE);
+    }
+
+    //****************************
+    //  Run Control
+    //****************************
+    void start() __attribute__((always_inline)) {
+	stop();
+	FTM1_CNT = 0;
+	resume();
+    }
+    void stop() __attribute__((always_inline)) {
+	FTM1_SC = FTM1_SC & (FTM_SC_TOIE | FTM_SC_CPWMS | FTM_SC_PS(7));
+    }
+    void restart() __attribute__((always_inline)) {
+	start();
+    }
+    void resume() __attribute__((always_inline)) {
+	FTM1_SC = (FTM1_SC & (FTM_SC_TOIE | FTM_SC_PS(7))) | FTM_SC_CPWMS | FTM_SC_CLKS(1);
+    }
+
+    //****************************
+    //  PWM outputs
+    //****************************
+    void setPwmDuty(char pin, unsigned int duty) __attribute__((always_inline)) {
+	unsigned long dutyCycle = pwmPeriod;
+	dutyCycle *= duty;
+	dutyCycle >>= 10;
+	if (pin == TIMER1_A_PIN) {
+		FTM1_C0V = dutyCycle;
+	} else if (pin == TIMER1_B_PIN) {
+		FTM1_C1V = dutyCycle;
+	}
+    }
+    void pwm(char pin, unsigned int duty) __attribute__((always_inline)) {
+	setPwmDuty(pin, duty);
+	if (pin == TIMER1_A_PIN) {
+		CORE_PIN3_CONFIG = PORT_PCR_MUX(3) | PORT_PCR_DSE | PORT_PCR_SRE;
+	} else if (pin == TIMER1_B_PIN) {
+		CORE_PIN4_CONFIG = PORT_PCR_MUX(3) | PORT_PCR_DSE | PORT_PCR_SRE;
+	}
+    }
+    void pwm(char pin, unsigned int duty, unsigned long microseconds) __attribute__((always_inline)) {
+	if (microseconds > 0) setPeriod(microseconds);
+	pwm(pin, duty);
+    }
+    void disablePwm(char pin) __attribute__((always_inline)) {
+	if (pin == TIMER1_A_PIN) {
+		CORE_PIN3_CONFIG = 0;
+	} else if (pin == TIMER1_B_PIN) {
+		CORE_PIN4_CONFIG = 0;
+	}
+    }
+
+    //****************************
+    //  Interrupt Function
+    //****************************
+    void attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
+	isrCallback = isr;
+	FTM1_SC |= FTM_SC_TOIE;
+	NVIC_ENABLE_IRQ(IRQ_FTM1);
+    }
+    void attachInterrupt(void (*isr)(), unsigned long microseconds) __attribute__((always_inline)) {
+	if(microseconds > 0) setPeriod(microseconds);
+	attachInterrupt(isr);
+    }
+    void detachInterrupt() __attribute__((always_inline)) {
+	FTM1_SC &= ~FTM_SC_TOIE;
+	NVIC_DISABLE_IRQ(IRQ_FTM1);
+    }
+    static void (*isrCallback)();
+
+  private:
+    // properties
+    static unsigned short pwmPeriod;
+    static unsigned char clockSelectBits;
+
+#endif
 };
 
 extern TimerOne Timer1;

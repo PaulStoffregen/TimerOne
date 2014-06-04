@@ -8,7 +8,6 @@
   #define TIMER1_B_PIN   4
   #define TIMER1_ICP_PIN 6
 
-
 // Teensy 2.0
 //
 #elif defined(__AVR_ATmega32U4__) && defined(CORE_TEENSY)
@@ -19,7 +18,6 @@
   #define TIMER1_CLK_PIN 11
   #define TIMER3_A_PIN   9
   #define TIMER3_ICP_PIN 10
-
 
 // Teensy++ 2.0
 #elif defined(__AVR_AT90USB1286__) && defined(CORE_TEENSY)
@@ -34,6 +32,22 @@
   #define TIMER3_ICP_PIN 17
   #define TIMER3_CLK_PIN 13
 
+// Teensy 3.0
+//
+#elif defined(__MK20DX128__)
+  #define TIMER1_A_PIN   3
+  #define TIMER1_B_PIN   4
+  #define TIMER1_ICP_PIN 4
+
+// Teensy 3.1
+//
+#elif defined(__MK20DX256__)
+  #define TIMER1_A_PIN   3
+  #define TIMER1_B_PIN   4
+  #define TIMER1_ICP_PIN 4
+  #define TIMER3_A_PIN   32
+  #define TIMER3_B_PIN   25
+  #define TIMER3_ICP_PIN 32
 
 // Arduino Mega
 //
@@ -54,15 +68,24 @@
   #define TIMER3_ICP_PIN 48
   #define TIMER3_CLK_PIN 47
 
+// Arduino Leonardo, Yun, etc
+//
+#elif defined(__AVR_ATmega32U4__)
+  #define TIMER1_A_PIN   9
+  #define TIMER1_B_PIN   10
+  #define TIMER1_C_PIN   11
+  #define TIMER1_ICP_PIN 4
+  #define TIMER1_CLK_PIN 12
+  #define TIMER3_A_PIN   5
+  #define TIMER3_ICP_PIN 13
 
-// Arduino Uno, Duemilanove, LilyPad, etc
+//  Uno, Duemilanove, LilyPad, etc
 //
 #elif defined (__AVR_ATmega168__) || defined (__AVR_ATmega328P__)
   #define TIMER1_A_PIN   9
   #define TIMER1_B_PIN   10
   #define TIMER1_ICP_PIN 8
   #define TIMER1_CLK_PIN 5
-
 
 // Sanguino
 //
