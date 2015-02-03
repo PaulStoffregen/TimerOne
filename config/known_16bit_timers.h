@@ -49,6 +49,16 @@
   #define TIMER3_B_PIN   25
   #define TIMER3_ICP_PIN 32
 
+// Teensy-LC
+//
+#elif defined(__MKL26Z64__)
+  #define TIMER1_A_PIN   16
+  #define TIMER1_B_PIN   17
+  #define TIMER1_ICP_PIN 17
+  #define TIMER3_A_PIN   3
+  #define TIMER3_B_PIN   4
+  #define TIMER3_ICP_PIN 4
+
 // Arduino Mega
 //
 #elif defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
