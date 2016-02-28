@@ -20,7 +20,7 @@ TimerOne Timer1;              // preinstatiate
 
 unsigned short TimerOne::pwmPeriod = 0;
 unsigned char TimerOne::clockSelectBits = 0;
-void (*TimerOne::isrCallback)() = NULL;
+void (*TimerOne::isrCallback)() = TimerOne::isrDefaultUnused;
 
 // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 #if defined(__AVR__)
@@ -42,3 +42,7 @@ void ftm1_isr(void)
 }
 
 #endif
+
+void TimerOne::isrDefaultUnused()
+{
+}

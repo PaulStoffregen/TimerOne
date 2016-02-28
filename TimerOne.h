@@ -150,6 +150,7 @@ class TimerOne
 	TIMSK1 = 0;
     }
     static void (*isrCallback)();
+    static void isrDefaultUnused();
 
   private:
     // properties
@@ -287,6 +288,7 @@ class TimerOne
 	NVIC_DISABLE_IRQ(IRQ_FTM1);
     }
     static void (*isrCallback)();
+    static void isrDefaultUnused();
 
   private:
     // properties
