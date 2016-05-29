@@ -80,11 +80,18 @@ class TimerOne
     //****************************
     //  Run Control
     //****************************
-    void start() __attribute__((always_inline)) {
-	TCCR1B = 0;
-	TCNT1 = 0;		// TODO: does this cause an undesired interrupt?
-	resume();
-    }
+	void start() __attribute__((always_inline)) {
+		TCCR1B = 0; //disable timer (this doesnt seem to stop the interrupt from occuring when setting TCNT1 to 0)
+		bool interruptActive = TIMSK1 & _BV(TOIE1);
+		if (interruptActive) {
+			TIMSK1 = TIMSK1 & ~_BV(TOIE1); //disable timer interrupt
+		}
+		TCNT1 = 0;
+		if (interruptActive) {
+			TIMSK1 = TIMSK1 | _BV(TOIE1); //enable timer interrupt
+		}
+		resume();
+	}
     void stop() __attribute__((always_inline)) {
 	TCCR1B = _BV(WGM13);
     }
