@@ -48,7 +48,7 @@ class TimerOne
 	TCCR1A = 0;                 // clear control register A 
 	setPeriod(microseconds);
     }
-    void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
+    void setPeriod(unsigned long microseconds, bool doRestart = false) __attribute__((always_inline)) {
 	const unsigned long cycles = (F_CPU / 2000000) * microseconds;
 	if (cycles < TIMER1_RESOLUTION) {
 		clockSelectBits = _BV(CS10);
@@ -75,6 +75,9 @@ class TimerOne
 	}
 	ICR1 = pwmPeriod;
 	TCCR1B = _BV(WGM13) | clockSelectBits;
+	if(doRestart){
+		restart();
+	}
     }
 
     //****************************
