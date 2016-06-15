@@ -175,10 +175,33 @@ class TimerOne
     //  Configuration
     //****************************
     void initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
+  FTM1_SC = 0; // moved from inside setPeriod to here!
+  FTM1_FMS = 0;
+  FTM1_MODE = FTM_MODE_FTMEN;   // WPDIS set, all registers accessible
+  FTM1_SYNC |= FTM_SYNC_CNTMIN; // CNTMIN load point
+  // Enhanced PWM sync:
+  // SWWRBUF : Let Software event trigger update of MOD/CnV.
+  //           Software event is nothing but "setting of FTM1_SYNC_SWSYNC"
+  // SWRSTCNT: Update MOD and CnV as soon as Software even occurs -- do not wait for
+  //           "the next loading point"
+  FTM1_SYNCONF |= FTM_SYNCONF_SYNCMODE | FTM_SYNCONF_SWWRBUF | FTM_SYNCONF_SWRSTCNT;
 	setPeriod(microseconds);
     }
-    void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
-	const unsigned long cycles = (F_TIMER / 2000000) * microseconds;
+    // @Paul
+    // I don't know what to call the second argument. It basically overrides CPWM if the user
+    // wants to setPeriod in each ISR (because there is no other way).
+    // 
+    // Since CPWM cannot work alongside this use case, you might want to keep this "mode switch" inside
+    // `initialize()` Or we could think of 2 setPeriod functions, with better names ofcourse...
+    // Its upto you..
+    void setPeriod(unsigned long microseconds, uint8_t frequent_update=0) __attribute__((always_inline)) {
+  unsigned long factor;
+  if (frequent_update > 0)
+	  factor = (F_TIMER / 1000000);
+  else
+    factor = (F_TIMER / 2000000);
+  const unsigned long cycles = factor * microseconds;
+
 	if (cycles < TIMER1_RESOLUTION) {
 		clockSelectBits = 0;
 		pwmPeriod = cycles;
@@ -215,9 +238,21 @@ class TimerOne
 		pwmPeriod = TIMER1_RESOLUTION - 1;
 	}
 	uint32_t sc = FTM1_SC;
-	FTM1_SC = 0;
+  // FTM1_SC = 0 not needed anymore!
 	FTM1_MOD = pwmPeriod;
-	FTM1_SC = FTM_SC_CLKS(1) | FTM_SC_CPWMS | clockSelectBits | (sc & FTM_SC_TOIE);
+  if (frequent_update)
+	  FTM1_SC = FTM_SC_CLKS(1) | clockSelectBits | (sc & FTM_SC_TOIE);
+  else
+    FTM1_SC = FTM_SC_CLKS(1) | FTM_SC_CPWMS | clockSelectBits | (sc & FTM_SC_TOIE);
+  FTM1_SYNC |= FTM_SYNC_SWSYNC; // this bit is cleared by hardware.
+  // This might be negligibly faster than FTM1_SC = 0; FTM1_CNT = FTM1_CNT;
+  // Moreover the configuration can give you another library method:
+  // reset_pwm(){
+  //     FTM1_SYNC |= FTM_SYNC_SWSYNC;
+  // }
+  // This configuration might help in powerful multi-channel PWM synchronisation. But it
+  // would require a lot more thinking on how to present all this power in a simple
+  // interface from TimerOne.
     }
 
     //****************************
@@ -236,6 +271,9 @@ class TimerOne
     }
     void resume() __attribute__((always_inline)) {
 	FTM1_SC = (FTM1_SC & (FTM_SC_TOIE | FTM_SC_PS(7))) | FTM_SC_CPWMS | FTM_SC_CLKS(1);
+  // Hmm, difficult to decide whether CPWM should be enabled at "every restart"
+  // It's probably better to keep that "mode switch" in `initialize()` to avoid pitfalls
+  // like this one...
     }
 
     //****************************
