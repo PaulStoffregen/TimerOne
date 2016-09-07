@@ -183,7 +183,10 @@ class TimerOne
   // This is like a binary serch tree and no more than 3 conditions are evaluated.
   // I haven't checked if this becomes significantly longer ASM than the simple ladder.
   // It looks very similar to the ladder tho: same # of if's and else's
-  
+ 
+  /*
+  // This code does not work properly in all cases :(
+  // https://github.com/PaulStoffregen/TimerOne/issues/17 
   if (cycles < TIMER1_RESOLUTION * 16) {
     if (cycles < TIMER1_RESOLUTION * 4) {
       if (cycles < TIMER1_RESOLUTION) {
@@ -222,7 +225,7 @@ class TimerOne
       }
     }
   }
-  /*
+  */
 	if (cycles < TIMER1_RESOLUTION) {
 		clockSelectBits = 0;
 		pwmPeriod = cycles;
@@ -258,7 +261,7 @@ class TimerOne
 		clockSelectBits = 7;
 		pwmPeriod = TIMER1_RESOLUTION - 1;
 	}
-  */
+
 	uint32_t sc = FTM1_SC;
 	FTM1_SC = 0;
 	FTM1_MOD = pwmPeriod;
