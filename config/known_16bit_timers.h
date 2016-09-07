@@ -49,7 +49,7 @@
   #define TIMER3_B_PIN   25
   #define TIMER3_ICP_PIN 32
   
-// Teensy 3.4 / Teensy 3.5
+// Teensy 3.5 / Teensy 3.6
 //
 #elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
   #define TIMER1_A_PIN   3
