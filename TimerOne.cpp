@@ -26,7 +26,9 @@ void (*TimerOne::isrCallback)() = TimerOne::isrDefaultUnused;
 #if defined(__AVR__)
 ISR(TIMER1_OVF_vect)
 {
-  Timer1.isrCallback();
+  if(Timer1.isrCallback) {
+    Timer1.isrCallback();
+  }
 }
 
 #elif defined(__arm__) && defined(CORE_TEENSY)
@@ -38,7 +40,9 @@ void ftm1_isr(void)
   #else
   if (sc & 0x80) FTM1_SC = sc & 0x7F;
   #endif
-  Timer1.isrCallback();
+  if(Timer1.isrCallback) {
+    Timer1.isrCallback();
+  }
 }
 
 #endif
