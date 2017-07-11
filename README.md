@@ -1,12 +1,12 @@
-TimerOne Library
-================
+#TimerOne Library#
 
 Paul Stoffregen's modified TimerOne.  This version provides 2 main benefits:
 
-1. Optimized inline functions - much faster for the most common usage
-2. Support for more boards
+1: Optimized inline functions - much faster for the most common usage  
+2: Support for more boards (including ATTiny85 except for the PWM functionality)
 
-http://www.pjrc.com/teensy/td_libs_TimerOne.html  
+http://www.pjrc.com/teensy/td_libs_TimerOne.html
+
 https://github.com/PaulStoffregen/TimerOne
 
 Original code
@@ -30,3 +30,4 @@ authors under the GNU GPLv2 license.  Multiple copies of this library, bearing
 the same name but distributed under different license terms, is unfortunately
 confusing.  This copy, with nearly all the code redesigned as inline functions,
 is provided under the "CC BY 3.0 US" license terms.
+
