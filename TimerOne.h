@@ -29,6 +29,8 @@
 #define TIMER1_RESOLUTION 256UL  // Timer1 is 8 bit
 #elif defined(__AVR__)
 #define TIMER1_RESOLUTION 65536UL  // Timer1 is 16 bit
+#else
+#define TIMER1_RESOLUTION 65536UL  // assume 16 bits for non-AVR chips
 #endif
 
 // Placing nearly all the code in this .h file allows the functions to be
