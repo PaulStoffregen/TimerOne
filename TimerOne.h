@@ -179,7 +179,7 @@ class TimerOne
 	TCCR1A = 0;                 // clear control register A 
 	setPeriod(microseconds);
     }
-    void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
+    void setPeriod(unsigned long microseconds, bool doRestart = false) __attribute__((always_inline)) {
 	const unsigned long cycles = (F_CPU / 2000000) * microseconds;
 	if (cycles < TIMER1_RESOLUTION) {
 		clockSelectBits = _BV(CS10);
@@ -206,16 +206,26 @@ class TimerOne
 	}
 	ICR1 = pwmPeriod;
 	TCCR1B = _BV(WGM13) | clockSelectBits;
+	if(doRestart){
+		restart();
+	}
     }
 
     //****************************
     //  Run Control
     //****************************
-    void start() __attribute__((always_inline)) {
-	TCCR1B = 0;
-	TCNT1 = 0;		// TODO: does this cause an undesired interrupt?
-	resume();
-    }
+	void start() __attribute__((always_inline)) {
+		TCCR1B = 0; //disable timer (this doesnt seem to stop the interrupt from occuring when setting TCNT1 to 0)
+		bool interruptActive = TIMSK1 & _BV(TOIE1);
+		if (interruptActive) {
+			bitClear(TIMSK1, TOIE1); //disable timer interrupt
+		}
+		TCNT1 = 0;
+		if (interruptActive) {
+			bitSet(TIMSK1, TOIE1); //enable timer interrupt
+		}
+		resume();
+	}
     void stop() __attribute__((always_inline)) {
 	TCCR1B = _BV(WGM13);
     }
