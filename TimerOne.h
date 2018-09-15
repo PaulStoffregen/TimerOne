@@ -180,7 +180,7 @@ class TimerOne
 	setPeriod(microseconds);
     }
     void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
-	const unsigned long cycles = (F_CPU / 2000000) * microseconds;
+	const unsigned long cycles = ((F_CPU/100000 * microseconds) / 20);
 	if (cycles < TIMER1_RESOLUTION) {
 		clockSelectBits = _BV(CS10);
 		pwmPeriod = cycles;
