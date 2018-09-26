@@ -170,6 +170,12 @@ class TimerOne
     static const byte ratio = (F_CPU)/ ( 1000000 );
 	
 #elif defined(__AVR__)
+
+#if defined (__AVR_ATmega8__)
+  //in some io definitions for older microcontrollers TIMSK is used instead of TIMSK1
+  #define TIMSK1 TIMSK
+#endif
+	
   public:
     //****************************
     //  Configuration
@@ -269,6 +275,7 @@ class TimerOne
     //****************************
     //  Interrupt Function
     //****************************
+	
     void attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
 	isrCallback = isr;
 	TIMSK1 = _BV(TOIE1);
