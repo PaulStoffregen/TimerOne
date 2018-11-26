@@ -146,7 +146,7 @@
 
 // Mighty-1284 - Maniacbug
 //
-#elif defined(__AVR_ATmega1284P__)
+#elif defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega1284__)
   #define TIMER1_A_PIN   12  // PD5
   #define TIMER1_B_PIN   13  // PD4
   #define TIMER1_ICP_PIN 14  // PD6
