@@ -300,7 +300,7 @@ class TimerOne
 
 
 
-#elif defined(__arm__) && defined(CORE_TEENSY)
+#elif defined(__arm__) && defined(TEENSYDUINO) && (defined(KINETISK) || defined(KINETISL))
 
 #if defined(KINETISK)
 #define F_TIMER F_BUS
@@ -490,6 +490,129 @@ class TimerOne
     static unsigned char clockSelectBits;
 
 #undef F_TIMER
+
+#elif defined(__arm__) && defined(TEENSYDUINO) && (defined(__IMXRT1052__) || defined(__IMXRT1062__))
+
+  public:
+    //****************************
+    //  Configuration
+    //****************************
+    void initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
+	setPeriod(microseconds);
+    }
+    void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
+	uint32_t period = (float)F_BUS_ACTUAL * (float)microseconds * 0.0000005f;
+	uint32_t prescale = 0;
+	while (period > 32767) {
+		period = period >> 1;
+		if (++prescale > 7) {
+			prescale = 7;	// when F_BUS is 150 MHz, longest
+			period = 32767; // period is 55922 us (~17.9 Hz)
+			break;
+		}
+	}
+	//Serial.printf("setPeriod, period=%u, prescale=%u\n", period, prescale);
+	FLEXPWM1_FCTRL0 |= FLEXPWM_FCTRL0_FLVL(8); // logic high = fault
+	FLEXPWM1_FSTS0 = 0x0008; // clear fault status
+	FLEXPWM1_MCTRL |= FLEXPWM_MCTRL_CLDOK(8);
+	FLEXPWM1_SM3CTRL2 = FLEXPWM_SMCTRL2_INDEP;
+	FLEXPWM1_SM3CTRL = FLEXPWM_SMCTRL_HALF | FLEXPWM_SMCTRL_PRSC(prescale);
+	FLEXPWM1_SM3INIT = -period;
+	FLEXPWM1_SM3VAL0 = 0;
+	FLEXPWM1_SM3VAL1 = period;
+	FLEXPWM1_SM3VAL2 = 0;
+	FLEXPWM1_SM3VAL3 = 0;
+	FLEXPWM1_SM3VAL4 = 0;
+	FLEXPWM1_SM3VAL5 = 0;
+	FLEXPWM1_MCTRL |= FLEXPWM_MCTRL_LDOK(8) | FLEXPWM_MCTRL_RUN(8);
+	pwmPeriod = period;
+    }
+    //****************************
+    //  Run Control
+    //****************************
+    void start() __attribute__((always_inline)) {
+	stop();
+	// TODO: how to force counter back to zero?
+	resume();
+    }
+    void stop() __attribute__((always_inline)) {
+	FLEXPWM1_MCTRL &= ~FLEXPWM_MCTRL_RUN(8);
+    }
+    void restart() __attribute__((always_inline)) {
+	start();
+    }
+    void resume() __attribute__((always_inline)) {
+	FLEXPWM1_MCTRL |= FLEXPWM_MCTRL_RUN(8);
+    }
+
+    //****************************
+    //  PWM outputs
+    //****************************
+    void setPwmDuty(char pin, unsigned int duty) __attribute__((always_inline)) {
+	if (duty > 1023) duty = 1023;
+	int dutyCycle = (pwmPeriod * duty) >> 10;
+	//Serial.printf("setPwmDuty, period=%u\n", dutyCycle);
+	if (pin == TIMER1_A_PIN) {
+		FLEXPWM1_MCTRL |= FLEXPWM_MCTRL_CLDOK(8);
+		FLEXPWM1_SM3VAL5 = dutyCycle;
+		FLEXPWM1_SM3VAL4 = -dutyCycle;
+		FLEXPWM1_MCTRL |= FLEXPWM_MCTRL_LDOK(8);
+	} else if (pin == TIMER1_B_PIN) {
+		FLEXPWM1_MCTRL |= FLEXPWM_MCTRL_CLDOK(8);
+		FLEXPWM1_SM3VAL3 = dutyCycle;
+		FLEXPWM1_SM3VAL2 = -dutyCycle;
+		FLEXPWM1_MCTRL |= FLEXPWM_MCTRL_LDOK(8);
+	}
+    }
+    void pwm(char pin, unsigned int duty) __attribute__((always_inline)) {
+	setPwmDuty(pin, duty);
+	if (pin == TIMER1_A_PIN) {
+		FLEXPWM1_OUTEN |= FLEXPWM_OUTEN_PWMB_EN(8);
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01 = 6; // pin 6 FLEXPWM1_PWM3_B
+	} else if (pin == TIMER1_B_PIN) {
+		FLEXPWM1_OUTEN |= FLEXPWM_OUTEN_PWMA_EN(8);
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00 = 6; // pin 7 FLEXPWM1_PWM3_A
+	}
+    }
+    void pwm(char pin, unsigned int duty, unsigned long microseconds) __attribute__((always_inline)) {
+	if (microseconds > 0) setPeriod(microseconds);
+	pwm(pin, duty);
+    }
+    void disablePwm(char pin) __attribute__((always_inline)) {
+	if (pin == TIMER1_A_PIN) {
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01 = 5; // pin 6 FLEXPWM1_PWM3_B
+		FLEXPWM1_OUTEN &= ~FLEXPWM_OUTEN_PWMB_EN(8);
+	} else if (pin == TIMER1_B_PIN) {
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00 = 5; // pin 7 FLEXPWM1_PWM3_A
+		FLEXPWM1_OUTEN &= ~FLEXPWM_OUTEN_PWMA_EN(8);
+	}
+    }
+    //****************************
+    //  Interrupt Function
+    //****************************
+    void attachInterrupt(void (*f)()) __attribute__((always_inline)) {
+	isrCallback = f;
+	attachInterruptVector(IRQ_FLEXPWM1_3, &isr);
+	FLEXPWM1_SM3STS = FLEXPWM_SMSTS_RF;
+	FLEXPWM1_SM3INTEN = FLEXPWM_SMINTEN_RIE;
+	NVIC_ENABLE_IRQ(IRQ_FLEXPWM1_3);
+    }
+    void attachInterrupt(void (*f)(), unsigned long microseconds) __attribute__((always_inline)) {
+	if(microseconds > 0) setPeriod(microseconds);
+	attachInterrupt(f);
+    }
+    void detachInterrupt() __attribute__((always_inline)) {
+	NVIC_DISABLE_IRQ(IRQ_FLEXPWM1_3);
+	FLEXPWM1_SM3INTEN = 0;
+    }
+    static void isr(void);
+    static void (*isrCallback)();
+    static void isrDefaultUnused();
+
+  private:
+    // properties
+    static unsigned short pwmPeriod;
+    static unsigned char clockSelectBits;
 
 #endif
 };

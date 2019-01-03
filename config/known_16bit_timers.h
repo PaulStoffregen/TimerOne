@@ -69,6 +69,14 @@
   #define TIMER3_B_PIN   4
   #define TIMER3_ICP_PIN 4
 
+// Teensy 4
+//
+#elif defined(__IMXRT1052__) || defined(__IMXRT1062__)
+  #define TIMER1_A_PIN   6
+  #define TIMER1_B_PIN   7
+  #define TIMER3_A_PIN   8
+  #define TIMER3_B_PIN   9
+
 // Arduino Mega
 //
 #elif defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
