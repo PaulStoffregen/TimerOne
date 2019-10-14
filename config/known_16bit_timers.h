@@ -114,7 +114,28 @@
   #define TIMER1_ICP_PIN 8
   #define TIMER1_CLK_PIN 5
 
-  //  attiny167
+// Minicore generic
+//
+#elif defined(__AVR_ATmega48PB__) || defined(__AVR_ATmega88PB__) || defined(__AVR_ATmega168PB__)
+  #define TIMER1_A_PIN   9
+  #define TIMER1_B_PIN   10
+  #define TIMER1_ICP_PIN 8
+  #define TIMER1_CLK_PIN 5
+#elif defined(__AVR_ATmega328PB__) 
+  #define TIMER1_A_PIN   9
+  #define TIMER1_B_PIN   10
+  #define TIMER1_ICP_PIN 8
+  #define TIMER1_CLK_PIN 5
+  #define TIMER3_A_PIN   0
+  #define TIMER3_B_PIN   2
+  #define TIMER3_ICP_PIN 25
+  #define TIMER3_CLK_PIN 26
+  #define TIMER4_A_PIN   1
+  #define TIMER4_B_PIN   2
+  #define TIMER4_ICP_PIN 23
+  #define TIMER4_CLK_PIN 24
+
+//  attiny167
 //
 #elif defined (__AVR_ATtiny167__)
   #define TIMER1_A_PIN   14
