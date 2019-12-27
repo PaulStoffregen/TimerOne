@@ -45,7 +45,7 @@ void ftm1_isr(void)
   #endif
   Timer1.isrCallback();
 }
-#elif defined(__arm__) && defined(TEENSYDUINO) && (defined(__IMXRT1052__) || defined(__IMXRT1062__))
+#elif defined(__arm__) && defined(TEENSYDUINO) && defined(__IMXRT1062__)
 void TimerOne::isr(void)
 {
   FLEXPWM1_SM3STS = FLEXPWM_SMSTS_RF;

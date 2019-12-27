@@ -491,7 +491,7 @@ class TimerOne
 
 #undef F_TIMER
 
-#elif defined(__arm__) && defined(TEENSYDUINO) && (defined(__IMXRT1052__) || defined(__IMXRT1062__))
+#elif defined(__arm__) && defined(TEENSYDUINO) && defined(__IMXRT1062__)
 
   public:
     //****************************
@@ -568,10 +568,10 @@ class TimerOne
 	setPwmDuty(pin, duty);
 	if (pin == TIMER1_A_PIN) {
 		FLEXPWM1_OUTEN |= FLEXPWM_OUTEN_PWMB_EN(8);
-		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01 = 6; // pin 6 FLEXPWM1_PWM3_B
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01 = 6; // pin 7 FLEXPWM1_PWM3_B
 	} else if (pin == TIMER1_B_PIN) {
 		FLEXPWM1_OUTEN |= FLEXPWM_OUTEN_PWMA_EN(8);
-		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00 = 6; // pin 7 FLEXPWM1_PWM3_A
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00 = 6; // pin 8 FLEXPWM1_PWM3_A
 	}
     }
     void pwm(char pin, unsigned int duty, unsigned long microseconds) __attribute__((always_inline)) {
@@ -580,10 +580,10 @@ class TimerOne
     }
     void disablePwm(char pin) __attribute__((always_inline)) {
 	if (pin == TIMER1_A_PIN) {
-		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01 = 5; // pin 6 FLEXPWM1_PWM3_B
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01 = 5; // pin 7 FLEXPWM1_PWM3_B
 		FLEXPWM1_OUTEN &= ~FLEXPWM_OUTEN_PWMB_EN(8);
 	} else if (pin == TIMER1_B_PIN) {
-		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00 = 5; // pin 7 FLEXPWM1_PWM3_A
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00 = 5; // pin 8 FLEXPWM1_PWM3_A
 		FLEXPWM1_OUTEN &= ~FLEXPWM_OUTEN_PWMA_EN(8);
 	}
     }
