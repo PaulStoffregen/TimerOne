@@ -1,4 +1,4 @@
-#include <TimerOne.h>
+#inc#include <TimerOne.h>
 
 // This example creates a PWM signal with 25 kHz carrier.
 //
@@ -20,7 +20,8 @@ const int fanPin = 4;
 
 void setup(void)
 {
-  Timer1.initialize(40);  // 40 us = 25 kHz
+  //Timer1.initialize(40);  // 40 us = 25 kHz
+  Timer1.setFrequency(25000); // 25 kHz
   Serial.begin(9600);
 }
 

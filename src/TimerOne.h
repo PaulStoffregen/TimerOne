@@ -43,10 +43,11 @@ class TimerOne
     //****************************
     //  Configuration
     //****************************
-    void initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
+    TimerOne& initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
 	TCCR1B = _BV(WGM13);        // set mode as phase and frequency correct pwm, stop the timer
 	TCCR1A = 0;                 // clear control register A 
 	setPeriod(microseconds);
+	return *this;
     }
     void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
 	const unsigned long cycles = (F_CPU / 2000000) * microseconds;
@@ -76,6 +77,10 @@ class TimerOne
 	ICR1 = pwmPeriod;
 	TCCR1B = _BV(WGM13) | clockSelectBits;
     }
+	TimerOne& setFrequency(float f = 1) {
+		unsigned long period = 1000000 / f;
+		return initialize(period);
+	}
 
     //****************************
     //  Run Control
@@ -138,13 +143,14 @@ class TimerOne
     //****************************
     //  Interrupt Function
     //****************************
-    void attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
+    TimerOne& attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
 	isrCallback = isr;
 	TIMSK1 = _BV(TOIE1);
+	return *this;
     }
-    void attachInterrupt(void (*isr)(), unsigned long microseconds) __attribute__((always_inline)) {
+    TimerOne& attachInterrupt(void (*isr)(), unsigned long microseconds) __attribute__((always_inline)) {
 	if(microseconds > 0) setPeriod(microseconds);
-	attachInterrupt(isr);
+	return attachInterrupt(isr);
     }
     void detachInterrupt() __attribute__((always_inline)) {
 	TIMSK1 = 0;
@@ -174,11 +180,12 @@ class TimerOne
     //****************************
     //  Configuration
     //****************************
-    void initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
-	setPeriod(microseconds);
+    TimerOne& initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
+		setPeriod(microseconds);
+		return *this;
     }
     void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
-	const unsigned long cycles = (F_TIMER / 2000000) * microseconds;
+		const unsigned long cycles = (F_TIMER / 2000000) * microseconds;
   // A much faster if-else
   // This is like a binary serch tree and no more than 3 conditions are evaluated.
   // I haven't checked if this becomes significantly longer ASM than the simple ladder.
@@ -226,47 +233,51 @@ class TimerOne
     }
   }
   */
-	if (cycles < TIMER1_RESOLUTION) {
-		clockSelectBits = 0;
-		pwmPeriod = cycles;
-	} else
-	if (cycles < TIMER1_RESOLUTION * 2) {
-		clockSelectBits = 1;
-		pwmPeriod = cycles >> 1;
-	} else
-	if (cycles < TIMER1_RESOLUTION * 4) {
-		clockSelectBits = 2;
-		pwmPeriod = cycles >> 2;
-	} else
-	if (cycles < TIMER1_RESOLUTION * 8) {
-		clockSelectBits = 3;
-		pwmPeriod = cycles >> 3;
-	} else
-	if (cycles < TIMER1_RESOLUTION * 16) {
-		clockSelectBits = 4;
-		pwmPeriod = cycles >> 4;
-	} else
-	if (cycles < TIMER1_RESOLUTION * 32) {
-		clockSelectBits = 5;
-		pwmPeriod = cycles >> 5;
-	} else
-	if (cycles < TIMER1_RESOLUTION * 64) {
-		clockSelectBits = 6;
-		pwmPeriod = cycles >> 6;
-	} else
-	if (cycles < TIMER1_RESOLUTION * 128) {
-		clockSelectBits = 7;
-		pwmPeriod = cycles >> 7;
-	} else {
-		clockSelectBits = 7;
-		pwmPeriod = TIMER1_RESOLUTION - 1;
-	}
+		if (cycles < TIMER1_RESOLUTION) {
+			clockSelectBits = 0;
+			pwmPeriod = cycles;
+		} else
+		if (cycles < TIMER1_RESOLUTION * 2) {
+			clockSelectBits = 1;
+			pwmPeriod = cycles >> 1;
+		} else
+		if (cycles < TIMER1_RESOLUTION * 4) {
+			clockSelectBits = 2;
+			pwmPeriod = cycles >> 2;
+		} else
+		if (cycles < TIMER1_RESOLUTION * 8) {
+			clockSelectBits = 3;
+			pwmPeriod = cycles >> 3;
+		} else
+		if (cycles < TIMER1_RESOLUTION * 16) {
+			clockSelectBits = 4;
+			pwmPeriod = cycles >> 4;
+		} else
+		if (cycles < TIMER1_RESOLUTION * 32) {
+			clockSelectBits = 5;
+			pwmPeriod = cycles >> 5;
+		} else
+		if (cycles < TIMER1_RESOLUTION * 64) {
+			clockSelectBits = 6;
+			pwmPeriod = cycles >> 6;
+		} else
+		if (cycles < TIMER1_RESOLUTION * 128) {
+			clockSelectBits = 7;
+			pwmPeriod = cycles >> 7;
+		} else {
+			clockSelectBits = 7;
+			pwmPeriod = TIMER1_RESOLUTION - 1;
+		}
 
-	uint32_t sc = FTM1_SC;
-	FTM1_SC = 0;
-	FTM1_MOD = pwmPeriod;
-	FTM1_SC = FTM_SC_CLKS(1) | FTM_SC_CPWMS | clockSelectBits | (sc & FTM_SC_TOIE);
+		uint32_t sc = FTM1_SC;
+		FTM1_SC = 0;
+		FTM1_MOD = pwmPeriod;
+		FTM1_SC = FTM_SC_CLKS(1) | FTM_SC_CPWMS | clockSelectBits | (sc & FTM_SC_TOIE);
     }
+	TimerOne& setFrequency(float f = 1) {
+		unsigned long period = 1000000 / f;
+		return initialize(period);
+	}
 
     //****************************
     //  Run Control
@@ -322,14 +333,15 @@ class TimerOne
     //****************************
     //  Interrupt Function
     //****************************
-    void attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
+    TimerOne& attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
 	isrCallback = isr;
 	FTM1_SC |= FTM_SC_TOIE;
 	NVIC_ENABLE_IRQ(IRQ_FTM1);
+	return *this;
     }
     void attachInterrupt(void (*isr)(), unsigned long microseconds) __attribute__((always_inline)) {
 	if(microseconds > 0) setPeriod(microseconds);
-	attachInterrupt(isr);
+	return attachInterrupt(isr);
     }
     void detachInterrupt() __attribute__((always_inline)) {
 	FTM1_SC &= ~FTM_SC_TOIE;

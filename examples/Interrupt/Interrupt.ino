@@ -1,19 +1,6 @@
 #include <TimerOne.h>
 
-// This example uses the timer interrupt to blink an LED
-// and also demonstrates how to share a variable between
-// the interrupt and the main program.
-
-
 const int led = LED_BUILTIN;  // the pin with a LED
-
-void setup(void)
-{
-  pinMode(led, OUTPUT);
-  Timer1.initialize(150000);
-  Timer1.attachInterrupt(blinkLED); // blinkLED to run every 0.15 seconds
-  Serial.begin(9600);
-}
 
 
 // The interrupt will blink the LED, and keep
@@ -33,6 +20,19 @@ void blinkLED(void)
 }
 
 
+
+void setup(void)
+{
+  pinMode(led, OUTPUT);
+  //Timer1.initialize(150000);
+  //Timer1.attachInterrupt(blinkLED); // blinkLED to run every 0.15 seconds
+  //Timer1.initialize(150000).attachInterrupt(blinkLED); //alternative way to enable the timer in one line
+  Timer1.setFrequency(6.66).attachInterrupt(blinkLED); //alternative way to enable the timer by frequency
+  Serial.begin(9600);
+}
+
+
+
 // The main program will print the blink count
 // to the Arduino Serial Monitor
 void loop(void)
@@ -44,11 +44,12 @@ void loop(void)
   // not change while we are reading.  To minimize the time
   // with interrupts off, just quickly make a copy, and then
   // use the copy while allowing the interrupt to keep working.
-  noInterrupts();
-  blinkCopy = blinkCount;
-  interrupts();
+  //noInterrupts();
+  //blinkCopy = blinkCount;
+  //interrupts();
 
   Serial.print("blinkCount = ");
   Serial.println(blinkCopy);
   delay(100);
+
 }
