@@ -641,21 +641,23 @@ class TimerOne
     //  Configuration
     //****************************
     void initialize(unsigned long microseconds = 1000000UL) __attribute__((always_inline)) {
-      uint8_t  _timerNo = 1;               // can as well use timer 1 (of four) :-)
-      uint64_t _frequency = 1000000;       // Timer frequency ´ 1 MHz
+      uint8_t  _timerNo = 1;  // we might as well use timer 1 (of 0..3) :-)
+      uint64_t _frequency = 1000000L;  // Timer frequency ´ 1 MHz
       // base frequency is (F_CPU / 3) == 80MHz, so for 1MHz, divider is 80
-      _timer = timerBegin(_timerNo, F_CPU / (_frequency * 3), true); // count up = true
-	  // NB: no ISR attached at this point
+	  uint16_t _divider = F_CPU / (_frequency * 3);
+      _timer = timerBegin(_timerNo, _divider, true); // count up = true
+      // NB: no ISR attached at this point
+      timerStart(_timer);
       setPeriod(microseconds);
     }
     // Any method called from within the ISR must have IRAM_ATTR set!
     void IRAM_ATTR setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
       // number of counts is in microseconds, desired_freq = (1MHz / microseconds)
       // count = base_frequency / desired_freq = (1MHz / freq) == period
-      uint64_t _timerCount = microseconds;   // count to activate timer
+      uint64_t _timerCount = microseconds;  // count to activate timer
       timerAlarmWrite(_timer, _timerCount, true); // autoreload = true to run forever
       timerAlarmEnable(_timer);
-      //timerRestart(_timer); // TODO: check if we need this
+      timerRestart(_timer);
     }
     //****************************
     //  Run Control
