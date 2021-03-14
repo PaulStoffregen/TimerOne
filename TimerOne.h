@@ -6,11 +6,12 @@
  *  Modified April 2012 by Paul Stoffregen - portable to other AVR chips, use inline functions
  *  Modified again, June 2014 by Paul Stoffregen - support Teensy 3.x & even more AVR chips
  *  Modified July 2017 by Stoyko Dimitrov - added support for ATTiny85 except for the PWM functionality
- *  
+ *  Modified March 2021 by Hagen Patzke - add ESP32 support for TZXDuino
+ *
  *
  *  This is free software. You can redistribute it and/or modify it under
- *  the terms of Creative Commons Attribution 3.0 United States License. 
- *  To view a copy of this license, visit http://creativecommons.org/licenses/by/3.0/us/ 
+ *  the terms of Creative Commons Attribution 3.0 United States License.
+ *  To view a copy of this license, visit http://creativecommons.org/licenses/by/3.0/us/
  *  or send a letter to Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
  *
  */
@@ -24,6 +25,13 @@
 #include "WProgram.h"
 #endif
 
+#if defined(ESP32)
+// ESP32 code derived from TimerInterrupt_Generic by Khoi Hoang
+// ESP32 has an operating system / SDK layer we need to use
+#include <esp32-hal-timer.h>
+#define MAX_ESP32_NUM_TIMERS      4
+typedef void (*timer_callback)  (void);
+#else // not ESP32
 #include "config/known_16bit_timers.h"
 #if defined (__AVR_ATtiny85__)
 #define TIMER1_RESOLUTION 256UL  // Timer1 is 8 bit
@@ -32,6 +40,7 @@
 #else
 #define TIMER1_RESOLUTION 65536UL  // assume 16 bits for non-AVR chips
 #endif
+#endif // (not) ESP32
 
 // Placing nearly all the code in this .h file allows the functions to be
 // inlined by the compiler.  In the very common case with constant values
@@ -52,7 +61,7 @@ class TimerOne
 	TIMSK |= _BV(OCIE1A);           //enable interrupt when OCR1A matches the timer value
 	setPeriod(microseconds);
     }
-    void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {		
+    void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
 	const unsigned long cycles = microseconds * ratio;
 	if (cycles < TIMER1_RESOLUTION) {
 		clockSelectBits = _BV(CS10);
@@ -121,13 +130,13 @@ class TimerOne
 	OCR1C = pwmPeriod;
 	TCCR1 = _BV(CTC1) | clockSelectBits;
     }
-	
+
     //****************************
     //  Run Control
-    //****************************	
+    //****************************
     void start() __attribute__((always_inline)) {
 	TCCR1 = 0;
-	TCNT1 = 0;		
+	TCNT1 = 0;
 	resume();
     }
     void stop() __attribute__((always_inline)) {
@@ -139,13 +148,13 @@ class TimerOne
     void resume() __attribute__((always_inline)) {
 	TCCR1 = _BV(CTC1) | clockSelectBits;
     }
-	
+
     //****************************
     //  PWM outputs
     //****************************
 	//Not implemented yet for ATTiny85
 	//TO DO
-	
+
     //****************************
     //  Interrupt Function
     //****************************
@@ -168,21 +177,21 @@ class TimerOne
     static unsigned short pwmPeriod;
     static unsigned char clockSelectBits;
     static const byte ratio = (F_CPU)/ ( 1000000 );
-	
+
 #elif defined(__AVR__)
 
 #if defined (__AVR_ATmega8__)
   //in some io definitions for older microcontrollers TIMSK is used instead of TIMSK1
   #define TIMSK1 TIMSK
 #endif
-	
+
   public:
     //****************************
     //  Configuration
     //****************************
     void initialize(unsigned long microseconds=1000000) __attribute__((always_inline)) {
 	TCCR1B = _BV(WGM13);        // set mode as phase and frequency correct pwm, stop the timer
-	TCCR1A = 0;                 // clear control register A 
+	TCCR1A = 0;                 // clear control register A
 	setPeriod(microseconds);
     }
     void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
@@ -275,7 +284,7 @@ class TimerOne
     //****************************
     //  Interrupt Function
     //****************************
-	
+
     void attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
 	isrCallback = isr;
 	TIMSK1 = _BV(TOIE1);
@@ -329,10 +338,10 @@ class TimerOne
   // This is like a binary serch tree and no more than 3 conditions are evaluated.
   // I haven't checked if this becomes significantly longer ASM than the simple ladder.
   // It looks very similar to the ladder tho: same # of if's and else's
- 
+
   /*
   // This code does not work properly in all cases :(
-  // https://github.com/PaulStoffregen/TimerOne/issues/17 
+  // https://github.com/PaulStoffregen/TimerOne/issues/17
   if (cycles < TIMER1_RESOLUTION * 16) {
     if (cycles < TIMER1_RESOLUTION * 4) {
       if (cycles < TIMER1_RESOLUTION) {
@@ -613,6 +622,77 @@ class TimerOne
     // properties
     static unsigned short pwmPeriod;
     static unsigned char clockSelectBits;
+
+
+
+
+
+
+#elif defined(ESP32)
+
+  // ESP32 code derived from TimerInterrupt_Generic by Khoi Hoang
+  // ESP32 has an operating system / SDK layer we need to use
+
+  private:
+    hw_timer_t*     _timer;
+
+  public:
+    //****************************
+    //  Configuration
+    //****************************
+    void initialize(unsigned long microseconds = 1000000UL) __attribute__((always_inline)) {
+      uint8_t  _timerNo = 1;               // can as well use timer 1 (of four) :-)
+      uint64_t _frequency = 1000000;       // Timer frequency ´ 1 MHz
+      // base frequency is (F_CPU / 3) == 80MHz, so for 1MHz, divider is 80
+      _timer = timerBegin(_timerNo, F_CPU / (_frequency * 3), true); // count up = true
+	  // NB: no ISR attached at this point
+      setPeriod(microseconds);
+    }
+    // Any method called from within the ISR must have IRAM_ATTR set!
+    void IRAM_ATTR setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
+      // number of counts is in microseconds, desired_freq = (1MHz / microseconds)
+      // count = base_frequency / desired_freq = (1MHz / freq) == period
+      uint64_t _timerCount = microseconds;   // count to activate timer
+      timerAlarmWrite(_timer, _timerCount, true); // autoreload = true to run forever
+      timerAlarmEnable(_timer);
+      //timerRestart(_timer); // TODO: check if we need this
+    }
+    //****************************
+    //  Run Control
+    //****************************
+    void start() __attribute__((always_inline)) {
+      timerStart(_timer);
+    }
+    void stop() __attribute__((always_inline)) {
+      timerStop(_timer);
+    }
+    void restart() __attribute__((always_inline)) {
+      timerRestart(_timer);
+    }
+    void resume() __attribute__((always_inline)) {
+      timerStart(_timer);
+    }
+
+    //****************************
+    //  PWM outputs
+    //****************************
+    // NOT IMPLEMENTED FOR ESP32
+
+    //****************************
+    //  Interrupt Function
+    //****************************
+    void attachInterrupt(timer_callback isr) __attribute__((always_inline)) {
+      timerAttachInterrupt(_timer, isr, true); // Interrupt on EGDE = true
+    }
+    void attachInterrupt(timer_callback isr, unsigned long microseconds) __attribute__((always_inline)) {
+      timerAttachInterrupt(_timer, isr, true); // Interrupt on EGDE = true
+      if(microseconds > 0) {
+        setPeriod(microseconds); 
+      }
+    }
+    void detachInterrupt() __attribute__((always_inline)) {
+      timerDetachInterrupt(_timer);
+    }
 
 #endif
 };

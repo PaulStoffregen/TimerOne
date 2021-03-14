@@ -11,6 +11,7 @@
   "platforms":
   [
     "atmelavr",
-    "teensy"
+    "teensy",
+    "esp32"
   ]
 }

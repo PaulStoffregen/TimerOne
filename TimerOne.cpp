@@ -7,6 +7,7 @@
  *  Modified April 2012 by Paul Stoffregen
  *  Modified again, June 2014 by Paul Stoffregen
  *  Modified July 2017 by Stoyko Dimitrov - added support for ATTiny85 except for the PWM functionality
+ *  Modified March 2021 by Hagen Patzke - add ESP32 support for TZXDuino
  *
  *  This is free software. You can redistribute it and/or modify it under
  *  the terms of Creative Commons Attribution 3.0 United States License. 
@@ -17,11 +18,14 @@
 
 #include "TimerOne.h"
 
-TimerOne Timer1;              // preinstatiate
+TimerOne Timer1;              // preinstantiate
 
+#if !defined(ESP32)
 unsigned short TimerOne::pwmPeriod = 0;
 unsigned char TimerOne::clockSelectBits = 0;
 void (*TimerOne::isrCallback)() = TimerOne::isrDefaultUnused;
+void TimerOne::isrDefaultUnused() { /* noop */; }
+#endif // not ESP32
 
 // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 #if defined (__AVR_ATtiny85__)
@@ -53,7 +57,3 @@ void TimerOne::isr(void)
 }
 
 #endif
-
-void TimerOne::isrDefaultUnused()
-{
-}
