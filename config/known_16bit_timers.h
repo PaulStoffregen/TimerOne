@@ -116,6 +116,11 @@
 
 // Minicore generic
 //
+#elif defined(__AVR_ATmega48P__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168P__)
+  #define TIMER1_A_PIN   9
+  #define TIMER1_B_PIN   10
+  #define TIMER1_ICP_PIN 8
+  #define TIMER1_CLK_PIN 5
 #elif defined(__AVR_ATmega48PB__) || defined(__AVR_ATmega88PB__) || defined(__AVR_ATmega168PB__)
   #define TIMER1_A_PIN   9
   #define TIMER1_B_PIN   10
