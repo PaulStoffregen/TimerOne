@@ -7,6 +7,8 @@
  *  Modified again, June 2014 by Paul Stoffregen - support Teensy 3.x & even more AVR chips
  *  Modified July 2017 by Stoyko Dimitrov - added support for ATTiny85 except for the PWM functionality
  *  
+ *  Modified October 2023 by David Caldwell - added support for UNO-R4 boards except for the PWM functionality
+ *  
  *
  *  This is free software. You can redistribute it and/or modify it under
  *  the terms of Creative Commons Attribution 3.0 United States License. 
@@ -76,7 +78,11 @@ public:
 
   static void (*isrCallback)();
   static void isrDefaultUnused(){};
+  
 
+  //****************************
+  //  Configuration
+  //****************************
   void initialize(unsigned long microseconds = 1000000) __attribute__((always_inline)) {
 
     // enable the timer in Module Stop Control Register D
@@ -185,7 +191,11 @@ public:
     R_AGT1->AGT = reloadSetting;
     start();
   }
+  
 
+  //****************************
+  //  Run Control
+  //****************************	
   void start() __attribute__((always_inline)) {
     resume();
   }
@@ -199,6 +209,15 @@ public:
     R_AGT1->AGTCR = 1;
   }
 
+  //****************************
+  //  PWM outputs
+  //****************************
+	//Not implemented yet for UNO-R4
+	//TO DO
+	
+  //****************************
+  //  Interrupt Function
+  //****************************
   void attachInterrupt(void (*isr)()) __attribute__((always_inline)) {
     isrCallback = isr;
   }
