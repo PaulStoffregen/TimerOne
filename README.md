@@ -1,5 +1,10 @@
 #TimerOne Library
 
+#delta-G Fork:
+
+This fork adds support for the UNO-R4 boards using the AGT1 timer.  PWM functions are not supported. 
+
+
 Paul Stoffregen's modified TimerOne.  This version provides 2 main benefits:
 
 1: Optimized inline functions - much faster for the most common usage  

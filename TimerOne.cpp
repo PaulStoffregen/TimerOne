@@ -7,6 +7,8 @@
  *  Modified April 2012 by Paul Stoffregen
  *  Modified again, June 2014 by Paul Stoffregen
  *  Modified July 2017 by Stoyko Dimitrov - added support for ATTiny85 except for the PWM functionality
+ *  
+ *  Modified October 2023 by David Caldwell - added support for UNO-R4 boards except for the PWM functionality
  *
  *  This is free software. You can redistribute it and/or modify it under
  *  the terms of Creative Commons Attribution 3.0 United States License. 
@@ -19,9 +21,27 @@
 
 TimerOne Timer1;              // preinstatiate
 
+
+#if defined (ARDUINO_UNOR4_MINIMA) || defined (ARDUINO_UNOR4_WIFI)
+uint16_t TimerOne::reloadSetting = 0xFFFF;
+agt_cntsrc_t TimerOne::srcbits = PCLKB;
+uint8_t TimerOne::divbits = 0;
+uint8_t TimerOne::eventLinkIndex = 0;
+void (*TimerOne::isrCallback)() = TimerOne::isrDefaultUnused;
+
+void TimerOne::internalCallback(){
+  // Reset the interrupt link and the flag for the timer
+  R_ICU->IELSR[eventLinkIndex] &= ~(R_ICU_IELSR_IR_Msk);
+  R_AGT1->AGTCR &= ~(R_AGT0_AGTCR_TUNDF_Msk);
+  isrCallback();
+}
+
+#else
 unsigned short TimerOne::pwmPeriod = 0;
 unsigned char TimerOne::clockSelectBits = 0;
 void (*TimerOne::isrCallback)() = TimerOne::isrDefaultUnused;
+
+
 
 // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 #if defined (__AVR_ATtiny85__)
@@ -57,3 +77,4 @@ void TimerOne::isr(void)
 void TimerOne::isrDefaultUnused()
 {
 }
+#endif
