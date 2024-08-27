@@ -641,18 +641,28 @@ class TimerOne
     //  Configuration
     //****************************
     void initialize(unsigned long microseconds = 1000000UL) __attribute__((always_inline)) {
+#if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+	  uint32_t frequency = 1000000 / microseconds;
+      _timer = timerBegin(frequency);
+#else
       // setup timer 1 with a divider of 80 for 1 MHz
       _timer = timerBegin(1, 80, true); // count up = true
       timerStart(_timer);
       setPeriod(microseconds);
+#endif	  
     }
     // Any method called from within the ISR must have IRAM_ATTR set!
     void IRAM_ATTR setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
+#if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+	  timerAlarm(_timer, microseconds, true, 0 /* repeat=unlimited */);
+      timerRestart(_timer); //compatibility to Arduino: starts when setPeriod is called
+#else
       // number of counts is in microseconds, desired_freq = (1MHz / microseconds)
       // count == base_frequency / desired_freq == 1MHz / (1MHz / period) == period
       timerAlarmWrite(_timer, microseconds, true); // autoreload = true to run forever
       timerAlarmEnable(_timer);
       timerRestart(_timer); //compatibility to Arduino: starts when setPeriod is called
+#endif	  
     }
     //****************************
     //  Run Control
@@ -679,13 +689,24 @@ class TimerOne
     //  Interrupt Function
     //****************************
     void attachInterrupt(timer_callback isr) __attribute__((always_inline)) {
+#if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+      timerAttachInterrupt(_timer, isr);
+#else
       timerAttachInterrupt(_timer, isr, true); // Interrupt on EGDE = true
+#endif	  
     }
     void attachInterrupt(timer_callback isr, unsigned long microseconds) __attribute__((always_inline)) {
+#if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+      if(microseconds > 0) {
+        setPeriod(microseconds); 
+      }
+      timerAttachInterrupt(_timer, isr);
+#else
       timerAttachInterrupt(_timer, isr, true); // Interrupt on EGDE = true
       if(microseconds > 0) {
         setPeriod(microseconds); 
       }
+#endif	  
     }
     void detachInterrupt() __attribute__((always_inline)) {
       timerDetachInterrupt(_timer);

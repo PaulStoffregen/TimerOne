@@ -31,3 +31,11 @@ the same name but distributed under different license terms, is unfortunately
 confusing.  This copy, with nearly all the code redesigned as inline functions,
 is provided under the "CC BY 3.0 US" license terms.
 
+----
+
+## Changes by Hagen Patzke
+
+Support added for ESP32
+
+* 2024-08-27: changed for arduino-esp32 3.0.3
+  Reason: Timer interface changed, see https://github.com/espressif/arduino-esp32/issues/8776
