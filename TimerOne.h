@@ -195,30 +195,41 @@ class TimerOne
 	setPeriod(microseconds);
     }
     void setPeriod(unsigned long microseconds) __attribute__((always_inline)) {
-	const unsigned long cycles = ((F_CPU/100000 * microseconds) / 20);
+	const unsigned long cycles = ((F_CPU/1000000 * microseconds) / 2);
 	if (cycles < TIMER1_RESOLUTION) {
 		clockSelectBits = _BV(CS10);
+    prescaler = 1;
 		pwmPeriod = cycles;
 	} else
 	if (cycles < TIMER1_RESOLUTION * 8) {
 		clockSelectBits = _BV(CS11);
-		pwmPeriod = cycles / 8;
+    prescaler = 8;
+		pwmPeriod = cycles / prescaler;
 	} else
 	if (cycles < TIMER1_RESOLUTION * 64) {
 		clockSelectBits = _BV(CS11) | _BV(CS10);
-		pwmPeriod = cycles / 64;
+    prescaler = 64;
+		pwmPeriod = cycles / prescaler;
 	} else
 	if (cycles < TIMER1_RESOLUTION * 256) {
 		clockSelectBits = _BV(CS12);
-		pwmPeriod = cycles / 256;
+    prescaler = 256;
+		pwmPeriod = cycles / prescaler;
+    Serial.println("H3");
+    Serial.println(2*((unsigned long)pwmPeriod));
 	} else
 	if (cycles < TIMER1_RESOLUTION * 1024) {
 		clockSelectBits = _BV(CS12) | _BV(CS10);
-		pwmPeriod = cycles / 1024;
+    prescaler = 1024;
+		pwmPeriod = cycles / prescaler;
+
 	} else {
 		clockSelectBits = _BV(CS12) | _BV(CS10);
+    prescaler = 1024;
 		pwmPeriod = TIMER1_RESOLUTION - 1;
 	}
+  totalTime = 2*((unsigned long)(pwmPeriod));
+  timeInterval = ((unsigned long)prescaler/(F_CPU/1000000UL));
 	ICR1 = pwmPeriod;
 	TCCR1B = _BV(WGM13) | clockSelectBits;
     }
@@ -228,7 +239,9 @@ class TimerOne
     //****************************
     void start() __attribute__((always_inline)) {
 	TCCR1B = 0;
-	TCNT1 = 0;		// TODO: does this cause an undesired interrupt?
+	//noInterrupts();
+	TCNT1 = 1;		// This Causes an interupt.
+	//interrupts();
 	resume();
     }
     void stop() __attribute__((always_inline)) {
@@ -240,6 +253,16 @@ class TimerOne
     void resume() __attribute__((always_inline)) {
 	TCCR1B = _BV(WGM13) | clockSelectBits;
     }
+  inline unsigned long elapsed() __attribute__((always_inline)) {
+    unsigned long t0 = TCNT1;
+    if (TIFR1 & _BV(ICF1)) //downcount
+    {
+      t0 = (totalTime-t0)*timeInterval;
+    }else{ //upcount
+       t0 = t0*timeInterval;   
+    }
+    return t0;
+  }
 
     //****************************
     //  PWM outputs
@@ -303,6 +326,9 @@ class TimerOne
     // properties
     static unsigned short pwmPeriod;
     static unsigned char clockSelectBits;
+    static unsigned short prescaler;
+    static unsigned long totalTime;
+     static unsigned long timeInterval;
 
 
 

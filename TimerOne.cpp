@@ -22,7 +22,10 @@ TimerOne Timer1;              // preinstantiate
 
 #if !defined(ESP32)
 unsigned short TimerOne::pwmPeriod = 0;
+unsigned long TimerOne::totalTime = 0;
+unsigned long TimerOne::timeInterval = 0;
 unsigned char TimerOne::clockSelectBits = 0;
+unsigned short TimerOne::prescaler = 1;
 void (*TimerOne::isrCallback)() = TimerOne::isrDefaultUnused;
 void TimerOne::isrDefaultUnused() { /* noop */; }
 #endif // not ESP32
@@ -36,6 +39,7 @@ ISR(TIMER1_COMPA_vect)
 #elif defined(__AVR__)
 ISR(TIMER1_OVF_vect)
 {
+  TIFR1 &= _BV(ICF1);
   Timer1.isrCallback();
 }
 #elif defined(__arm__) && defined(TEENSYDUINO) && (defined(KINETISK) || defined(KINETISL))
